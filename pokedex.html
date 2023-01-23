@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introduccion</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.10/dist/vue.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>    
+</head>
+<body>
+    <div id="app">
+        <div v-if="loader">Cargando ...</div>
+        <div class="grid-container" align="center">
+            <div class="pokemon" v-for="(pokemon, index) in array_pokemons">
+                <div class="card" @click="showInfo(pokemon, index)" @click.prevent="ventana=true">
+                    <div class="div-imagen">
+                        <img class="imagen" :src="pokemon.sprites.front_default"> 
+                    </div>
+                    <div :class="'div-superior'" align="center" :style="assignColor(pokemon.types)" >
+                        <div class="name">{{`${pokemon.name.toUpperCase()} #${index + 1}`}}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal" v-if="ventana">
+            <div class="info-modal">
+                <div class="modal-img">
+                        <img :src="pokemonInfo.sprites.front_default">
+                </div>
+                <div :class="'modal-superior'" :style="assignColor(pokemonInfo.types)" >
+                    <div class="pokemon-name">
+                        <p align="center">{{pokemonInfo.name.toUpperCase()}}</p>
+                    </div>
+                </div>
+                <div class="menu" align="center">
+                    <div>
+                        <button class="botones" type="button" @click="renderComponents(1)">About</button>
+                    </div>
+                    <div>
+                        <button class="botones" type="button" @click="renderComponents(2)">Abilities</button>
+                    </div>
+                    <div>
+                        <button class="botones" type="button" @click="renderComponents(3)">stats</button>
+                    </div>
+                </div>
+                <div class="datos-modal" v-if="about">
+                    <span class="encabezados">Tipo:</span>
+                    <div class="tipos">
+                        <div v-for="(tipo, index) in pokemonInfo.types" :key="index">
+                            <p>{{tipo.type.name}}</p>
+                        </div>
+                    </div>
+                    <br>
+
+                    <div class="estadisticas">
+                        <div class="datos-estadistica">
+                            <span class="encabezados" >Altura</span>
+                            {{pokemonInfo.height}} 
+                        </div>
+                        <div class="datos-estadistica">
+                            <span class="encabezados" >Peso</span>
+                            {{pokemonInfo.weight}} 
+                        </div>
+                    </div>
+                </div>
+
+                <div class="datos-modal" v-if="abilities">
+                    <span class="encabezados">Habilidades:</span>
+                    <div class="habilidades">
+                        <div v-for="(habilidad, index) in pokemonInfo.abilities" :key="index">
+                            {{habilidad.ability.name}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="datos-modal" v-if="stats">
+                    <span class="encabezados" >Estadísticas:</span>
+                    <div class="estadisticas">
+                        <div v-for="(valor, index) in pokemonInfo.stats" :key="index" class="datos-estadistica">
+                            <div>
+                                {{valor.stat.name}}
+                            </div>
+                            <div>
+                                {{valor.base_stat}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn-close" @click.prevent="ventana=false">Close</button>
+        </div>
+    </div>
+    <script>
+        new Vue({
+            el: '#app',
+            data: {
+                api: 'https://pokeapi.co/api/v2/pokemon/',
+                data: {},
+                array_pokemons: [],
+                ventana: false,
+                loader: false,
+                colors: {
+                    fire: '#eb7a7a',
+                    grass: '#8bd68b',
+                    electric: '#f7e590',
+                    water: '#a4e3f8',
+                    ground: '#d3c4a8',
+                    rock: '#a89766',
+                    fairy: '#be6991',
+                    poison: '#8e62a7',
+                    bug: '#556852',
+                    dragon: '#70abbd',
+                    psychic: '#d87bdd',
+                    flying: '#6b959e',
+                    fighting: '#ad8061',
+                    normal: '#A87E7E',
+                    ghost: '#565c81',
+                    ice: '#AFD8EC',
+                    steel: '#66ac9e',
+                    dark: '#000000'
+                },
+                defaultStyles: {
+                    'padding': '10px', 
+                    'font-weight': 'bold',
+                },
+                pokemonInfo: {},
+                abilities: false,
+                about: true,
+                stats: false,               
+            },
+            mounted: async function (){
+                this.loader = true;
+                for (let index = 1; index < 151; index++) {
+                    let response = await axios.get(this.api+index)
+                    this.array_pokemons.push(response.data)
+                }
+                this.loader = false;
+            },
+            methods: {
+                assignColor: function(types){
+                    let all_colors = [];
+                    let class_colors_temp = {};
+                    types.map(type => {
+                        if(types.length > 1){
+                            for(key in this.colors){
+                                if(type.type.name == key){
+                                    all_colors.push(this.colors[key]);
+                                    class_colors_temp = {
+                                        ...this.defaultStyles,
+                                        'background': `linear-gradient(${all_colors.join(',')})`
+                                    }
+                                }
+                                
+                            }
+                        }else{
+                            for(key in this.colors){
+                                if(type.type.name == key){
+                                    all_colors.push(this.colors[key]);
+                                    class_colors_temp = {
+                                        ...this.defaultStyles,
+                                        'background-color': this.colors[key]
+                                    }
+                                } 
+                            }
+                        }
+                    });
+                    return class_colors_temp;
+                },
+                showInfo: function (pokemon, index){
+                    this.pokemonInfo=pokemon
+                },
+                renderComponents: function(value){
+                    if(value == 1){
+                        if(this.stats==true || this.abilities==true){
+                            this.abilities=false;
+                            this.stats=false;
+                        }
+                        this.about=true;
+                    }
+                    if(value == 2){
+                        if(this.stats==true || this.about==true){
+                            this.abilities=false;
+                            this.about=false;
+                        }
+                        this.abilities=true;
+                    }
+                    if(value == 3){
+                        if(this.about==true || this.abilities==true){
+                            this.abilities=false;
+                            this.about=false;
+                        }
+                        this.stats=true;
+                    }
+                },
+            }
+        })
+    </script>
+    <style>
+        *{
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        body{
+            background: #fff;
+        }
+
+        .card{
+            cursor: pointer;
+            position: relative;
+            margin: 0;
+            border-radius: 20px;
+        }
+
+        .card:hover{
+            box-shadow: 5px 5px 5px #38383877;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: auto auto auto;
+            padding: 100px;
+            display: flex;
+            flex-wrap: wrap;
+        }
+        .name{
+            padding-top: 170px;
+        }
+
+        .pokemon{
+            margin: 20px;
+            border-radius: 20px;
+            padding: 0;
+        }
+
+        .pokemon:hover{
+            transform: scale(1.1);
+            transition: .5s;
+        }
+
+        .div-superior{
+            width: 300px;
+            height: 200px;
+            border-radius: 20px 20px 20px 20px;
+        }
+
+        .div-imagen{
+            position: absolute;
+            border-radius: 100px;
+            width: auto;
+            height: auto;
+            z-index: 100;
+            padding: 10px;
+            margin-top: -20px;
+            margin-left: 50px;
+        }
+
+        .encabezados{
+            font-size: 18px; 
+            font-family: Impact, 'Haettenschweiler', 'Arial Narrow Bold', sans-serif; 
+            letter-spacing: 1px;
+        }
+
+        .imagen{
+            height: 200px;
+            width: 200px;
+            border-radius: 100px;
+        }
+
+        .datos-pokemon{
+            width: auto;
+            background-color: #ffffff;  
+        }
+
+        .datos{
+            text-align: center;
+            background-color: #ffffff;
+            padding-top: 100px;
+            width: auto;
+            height: auto;
+            padding-bottom: 20px;
+            border-bottom-right-radius: 20px;
+            border-bottom-left-radius: 20px;
+        }
+
+        .div-ataque{
+            display: inline-block;
+        }
+
+        .div-ataque p{
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        .div-ataqueEspecial{
+            display: inline-block;
+        }
+
+
+        .div-ataqueEspecial p{
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        .div-defensa{
+            display: inline-block;
+        }
+
+        .div-defensa p{
+            font-weight: normal;
+            font-size: 13px;
+        }
+
+        .modal{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fafafa;
+            padding-bottom: 20px;
+            border-radius: 20px;
+            box-shadow: 3px 3px #00000066;
+            z-index: 101;
+            transition: 0.5s;
+            width: auto;
+            height: auto;
+        }
+        
+        .btn-close{
+            padding: 5px;
+            border-radius: 5px;
+            float: right;
+            border: none;
+            margin-right: 15px;
+        }
+
+        .btn-close:hover{
+            background-color: red;
+            transition: 0.2s;
+        }
+
+        .modal-img{
+            position: absolute;
+            width: auto;
+            height: auto;
+            z-index: 100;
+            padding: 10px;
+            margin-top: 15px;
+        }
+        
+        .datos-modal{
+            padding: 20px;
+            width: 260px;
+            text-justify: auto;
+            margin-left: 20px;
+        }
+
+        .modal-img img{
+            height: 250px;
+            width: 250px;
+            margin-left: 20px;
+            background-color: #ffffff00;
+        }
+
+        .modal-superior{
+            width: 300px;
+            height: 100px;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border-bottom-right-radius: 90px;
+            border-bottom-left-radius: 90px;
+        }
+
+        .info-modal{
+            position: relative;
+        }
+
+        .pokemon-name{
+            margin: 20px;
+            color: white;
+            font-size: 20px;
+        }
+
+        .estadisticas{
+            display: grid;
+            grid-template-columns: auto auto auto;
+        }
+
+        .datos-estadistica{
+            height: auto;
+            width: auto;
+            padding: 5px;
+        }
+
+        .habilidades{
+            display: grid;
+            grid-template-columns: auto auto auto;
+        }
+
+        .tipos{
+            display: grid;
+            grid-template-columns: auto auto auto;
+        }
+
+        .menu{
+            margin-top: 160px;
+            display: grid;
+            grid-template-columns: auto auto auto;
+        }
+
+        .botones{
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            border: 3px solid #00000034;
+            font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+            letter-spacing: 1px;
+            color: grey;
+            font-size: 15px;
+        }
+    </style>
+</body>
+</html>
